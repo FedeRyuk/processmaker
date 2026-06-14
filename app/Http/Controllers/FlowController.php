@@ -20,7 +20,7 @@ class FlowController extends Controller
 
         $transitionsJson = $project->transitions->map(fn ($t) => [
             'id' => $t->id, 'from' => $t->from_task_id, 'to' => $t->to_task_id,
-            'label' => $t->label, 'conditions' => $t->conditions,
+            'label' => $t->label, 'conditions' => $t->conditions, 'bend_points' => $t->bend_points ?? [],
         ])->toJson();
 
         $fieldsByTaskJson = $project->tasks->mapWithKeys(fn ($t) => [
@@ -113,12 +113,26 @@ class FlowController extends Controller
             'conditions.rules.*.field' => ['nullable', 'string'],
             'conditions.rules.*.operator' => ['nullable', 'string'],
             'conditions.rules.*.value' => ['nullable'],
+            'bend_points' => ['nullable', 'array'],
+            'bend_points.*.x' => ['required_with:bend_points', 'numeric'],
+            'bend_points.*.y' => ['required_with:bend_points', 'numeric'],
         ]);
 
-        $transition->update([
-            'label' => $data['label'] ?? null,
-            'conditions' => $data['conditions'] ?? null,
-        ]);
+        $updates = [];
+        if (array_key_exists('label', $data)) {
+            $updates['label'] = $data['label'];
+        }
+        if (array_key_exists('conditions', $data)) {
+            $updates['conditions'] = $data['conditions'];
+        }
+        if (array_key_exists('bend_points', $data)) {
+            $updates['bend_points'] = collect($data['bend_points'] ?? [])
+                ->map(fn ($point) => ['x' => round((float) $point['x'], 1), 'y' => round((float) $point['y'], 1)])
+                ->values()
+                ->all();
+        }
+
+        $transition->update($updates);
 
         return response()->json($transition);
     }

@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Transition extends Model
 {
     protected $fillable = [
-        'project_id', 'from_task_id', 'to_task_id', 'conditions', 'label',
+        'project_id', 'from_task_id', 'to_task_id', 'conditions', 'label', 'bend_points',
     ];
 
     protected $casts = [
         'conditions' => 'array',
+        'bend_points' => 'array',
     ];
 
     public function fromTask(): BelongsTo

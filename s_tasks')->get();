@@ -1,0 +1,16 @@
+[90m= [39m[34;4mIlluminate\Support\Collection[39;24m {#8024
+    [34mall[39m: [
+      {#8026
+        +"[1mid[22m": [35m2[39m,
+        +"[1mname[22m": [32m"[39m[32mProvisioning[39m[32m"[39m,
+        +"[1mdescription[22m": [32m"[39m[32mProcesso per l'installazione dei servizi presso i Clienti[39m[32m"[39m,
+        +"[1mdb_host[22m": [32m"[39m[32m127.0.0.1[39m[32m"[39m,
+        +"[1mdb_port[22m": [35m3306[39m,
+        +"[1mdb_database[22m": [32m"[39m[32mProvisioning[39m[32m"[39m,
+        +"[1mdb_username[22m": [32m"[39m[32mroot[39m[32m"[39m,
+        +"[1mdb_password[22m": [36mnull[39m,
+        +"[1mcreated_at[22m": [32m"[39m[32m2026-06-14 13:25:44[39m[32m"[39m,
+        +"[1mupdated_at[22m": [32m"[39m[32m2026-06-14 13:25:44[39m[32m"[39m,
+      },
+    ],
+  }

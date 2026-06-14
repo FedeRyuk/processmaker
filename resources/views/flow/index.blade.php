@@ -6,6 +6,9 @@
 <style>
     #cond-panel { display:none; }
     .rule-row { display:grid; grid-template-columns: 1fr 110px 1fr 32px; gap:.4rem; margin-bottom:.4rem; }
+    .edge-bend { fill:#fff; stroke:#4f46e5; stroke-width:2; cursor:move; pointer-events:all; }
+    .edge-insert { fill:#4f46e5; opacity:.18; cursor:copy; pointer-events:all; }
+    .edge-insert:hover { opacity:.9; }
 </style>
 @endpush
 
@@ -14,7 +17,7 @@
     <h4 class="mb-0"><i class="bi bi-diagram-3"></i> Progettazione del flusso</h4>
     <div class="d-flex gap-2">
         <button id="add-task" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Aggiungi task</button>
-        <span class="text-muted small align-self-center">Trascina i task · collega le frecce dai pallini · clicca una freccia per le condizioni</span>
+        <span class="text-muted small align-self-center">Trascina i task · collega le frecce dai pallini · clicca una freccia per le condizioni · usa i punti sulle frecce per spezzarle</span>
     </div>
 </div>
 
@@ -57,7 +60,8 @@
             <div class="card-body small text-muted">
                 <p class="mb-1"><span class="badge" style="background:#16a34a">verde</span> = task iniziale / porta di ingresso</p>
                 <p class="mb-1"><span class="badge" style="background:#4f46e5">viola</span> = porta di uscita</p>
-                <p class="mb-0">Doppio click su un task per progettarne i campi.</p>
+                <p class="mb-1">Clicca il punto chiaro a meta freccia per aggiungere una piega.</p>
+                <p class="mb-0">Trascina i punti pieni per modificare la forma; doppio click su un punto per eliminarlo.</p>
             </div>
         </div>
     </div>
@@ -143,7 +147,7 @@ function renderNode(t) {
             try {
                 const tr = await api(ROUTES.storeTransition, 'POST', { from_task_id: linking, to_task_id: t.id });
                 if (!transitions.find(x => x.id === tr.id)) {
-                    transitions.push({ id: tr.id, from: tr.from_task_id, to: tr.to_task_id, label: tr.label, conditions: tr.conditions });
+                    transitions.push({ id: tr.id, from: tr.from_task_id, to: tr.to_task_id, label: tr.label, conditions: tr.conditions, bend_points: tr.bend_points || [] });
                 }
                 renderEdges();
             } catch (err) { alert('Impossibile creare la freccia.'); }
@@ -193,23 +197,92 @@ function renderEdges() {
         const a = nodeCenter(tr.from, 'out');
         const b = nodeCenter(tr.to, 'in');
         if (!a || !b) return;
-        const dy = Math.abs(b.y - a.y) / 2 + 20;
-        const d = `M${a.x},${a.y} C${a.x},${a.y + dy} ${b.x},${b.y - dy} ${b.x},${b.y}`;
+        tr.bend_points = Array.isArray(tr.bend_points) ? tr.bend_points : [];
+        const points = [a, ...tr.bend_points, b];
+        const d = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x},${point.y}`).join(' ');
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', d);
         path.setAttribute('marker-end', 'url(#arrow)');
         path.addEventListener('click', () => openConditions(tr));
         svg.appendChild(path);
+        renderEdgeHandles(tr, points);
         if (tr.label || (tr.conditions && tr.conditions.rules && tr.conditions.rules.length)) {
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', (a.x + b.x) / 2 + 6);
-            text.setAttribute('y', (a.y + b.y) / 2);
+            const labelPoint = points[Math.floor(points.length / 2)];
+            text.setAttribute('x', labelPoint.x + 6);
+            text.setAttribute('y', labelPoint.y);
             text.setAttribute('font-size', '11');
             text.setAttribute('fill', '#4f46e5');
             text.textContent = tr.label || 'condizione';
             svg.appendChild(text);
         }
     });
+}
+
+function renderEdgeHandles(tr, points) {
+    points.slice(0, -1).forEach((point, index) => {
+        const next = points[index + 1];
+        const insert = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        insert.setAttribute('class', 'edge-insert');
+        insert.setAttribute('cx', (point.x + next.x) / 2);
+        insert.setAttribute('cy', (point.y + next.y) / 2);
+        insert.setAttribute('r', 7);
+        insert.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            tr.bend_points.splice(index, 0, { x: Number(insert.getAttribute('cx')), y: Number(insert.getAttribute('cy')) });
+            renderEdges();
+            await saveTransitionShape(tr);
+        });
+        svg.appendChild(insert);
+    });
+
+    tr.bend_points.forEach((point, index) => {
+        const bend = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        bend.setAttribute('class', 'edge-bend');
+        bend.setAttribute('cx', point.x);
+        bend.setAttribute('cy', point.y);
+        bend.setAttribute('r', 6);
+        bend.addEventListener('mousedown', (e) => startBendDrag(e, tr, index));
+        bend.addEventListener('dblclick', async (e) => {
+            e.stopPropagation();
+            tr.bend_points.splice(index, 1);
+            renderEdges();
+            await saveTransitionShape(tr);
+        });
+        svg.appendChild(bend);
+    });
+}
+
+function startBendDrag(e, tr, index) {
+    e.preventDefault();
+    e.stopPropagation();
+    let moved = false;
+    const onMove = (event) => {
+        moved = true;
+        const point = canvasPoint(event);
+        tr.bend_points[index] = point;
+        renderEdges();
+    };
+    const onUp = async () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        if (moved) await saveTransitionShape(tr);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+}
+
+function canvasPoint(event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: Math.max(0, Math.min(canvas.clientWidth, event.clientX - rect.left)),
+        y: Math.max(0, Math.min(canvas.clientHeight, event.clientY - rect.top)),
+    };
+}
+
+async function saveTransitionShape(tr) {
+    const saved = await api(ROUTES.transitionBase + '/' + tr.id, 'PUT', { bend_points: tr.bend_points });
+    tr.bend_points = saved.bend_points || [];
 }
 
 // ---- Conditions panel ----

@@ -9,18 +9,20 @@ use Illuminate\Http\Request;
 
 class TaskDesignerController extends Controller
 {
+    public function all(Project $project)
+    {
+        $tasks = $project->tasks()->with('fields')->get();
+        $tasks->each(fn (ProcessTask $task) => $task->fields_json = $this->fieldsJson($task));
+
+        return view('tasks.all', compact('project', 'tasks'));
+    }
+
     public function index(Project $project, ProcessTask $task)
     {
         abort_unless($task->project_id === $project->id, 404);
         $task->load('fields');
 
-        $fieldsJson = $task->fields->map(fn ($f) => [
-            'id' => $f->id, 'name' => $f->name, 'label' => $f->label, 'type' => $f->type,
-            'options' => $f->options, 'config' => $f->config,
-            'read_db' => $f->read_db, 'read_table' => $f->read_table, 'read_column' => $f->read_column,
-            'default_value' => $f->default_value,
-            'write_db' => $f->write_db, 'write_table' => $f->write_table, 'write_column' => $f->write_column,
-        ])->toJson();
+        $fieldsJson = $this->fieldsJson($task);
 
         return view('tasks.designer', compact('project', 'task', 'fieldsJson'));
     }
@@ -64,5 +66,16 @@ class TaskDesignerController extends Controller
             'write_table' => ['nullable', 'string', 'max:255'],
             'write_column' => ['nullable', 'string', 'max:255'],
         ]);
+    }
+
+    private function fieldsJson(ProcessTask $task): string
+    {
+        return $task->fields->map(fn ($f) => [
+            'id' => $f->id, 'name' => $f->name, 'label' => $f->label, 'type' => $f->type,
+            'options' => $f->options, 'config' => $f->config,
+            'read_db' => $f->read_db, 'read_table' => $f->read_table, 'read_column' => $f->read_column,
+            'default_value' => $f->default_value,
+            'write_db' => $f->write_db, 'write_table' => $f->write_table, 'write_column' => $f->write_column,
+        ])->toJson();
     }
 }

@@ -21,11 +21,11 @@
             <p class="text-muted small mb-0">{{ $project->transitions_count }} transizioni, {{ $project->tasks_count }} task</p>
         </div></div></a>
     </div>
-    <div class="col-md-3"><a class="text-decoration-none" href="{{ route('flow.index', $project) }}">
+    <div class="col-md-3"><a class="text-decoration-none" href="{{ route('tasks.designer.all', $project) }}">
         <div class="card h-100 shadow-sm"><div class="card-body text-center py-4">
             <i class="bi bi-input-cursor-text fs-1 text-primary"></i>
             <h5 class="mt-2">Progettazione task</h5>
-            <p class="text-muted small mb-0">Apri un task dal flusso per gestirne i campi</p>
+            <p class="text-muted small mb-0">Gestisci i campi di tutti i task</p>
         </div></div></a>
     </div>
     <div class="col-md-3"><a class="text-decoration-none" href="{{ route('db.index', $project) }}">

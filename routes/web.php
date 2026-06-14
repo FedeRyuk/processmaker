@@ -23,6 +23,7 @@ Route::prefix('projects/{project}')->group(function () {
     Route::delete('flow/transitions/{transition}', [FlowController::class, 'destroyTransition'])->name('flow.transitions.destroy');
 
     // Progettazione task
+    Route::get('tasks/designer', [TaskDesignerController::class, 'all'])->name('tasks.designer.all');
     Route::get('tasks/{task}/designer', [TaskDesignerController::class, 'index'])->name('tasks.designer');
     Route::post('tasks/{task}/fields', [TaskDesignerController::class, 'storeField'])->name('tasks.fields.store');
     Route::put('tasks/{task}/fields/{field}', [TaskDesignerController::class, 'updateField'])->name('tasks.fields.update');

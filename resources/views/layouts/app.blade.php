@@ -49,6 +49,7 @@
             <ul class="nav nav-pills">
                 <li class="nav-item"><a class="nav-link text-white" href="{{ route('projects.show', $project) }}">Progetto</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="{{ route('flow.index', $project) }}">Flusso</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="{{ route('tasks.designer.all', $project) }}">Progettazione task</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="{{ route('db.index', $project) }}">Struttura DB</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="{{ route('cases.index', $project) }}">Casi</a></li>
             </ul>
